@@ -100,3 +100,5 @@ Using lab (from Mike L, ITEC285, MHC) as process. Python Script used as delivery
 ![icon](https://cdn.jsdelivr.net/gh/devicons/devicon/icons/raspberrypi/raspberrypi-original-wordmark.svg)
 
 ![icon](https://adamtheautomator.com/wp-content/uploads/2019/08/powershell-1.png)
+
+![icon](https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original-wordmark.svg)
